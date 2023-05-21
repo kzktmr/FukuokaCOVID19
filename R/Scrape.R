@@ -5,23 +5,25 @@ library(stringr)
 library(rvest)
 library(ggplot2)
 
-reg <- tibble(
+region <- tibble(
   code = c("00", "08", "09", "10", "11", "12", "13", "14", "15", "42", 
            "57", "58", "59", "60", "65", "68", "74", "75", "77"),
-  region = c("福岡県全体", "福岡市中央区", "福岡市博多区", "福岡市南区", "福岡市早良区", 
+  name = c("福岡県", "福岡市中央区", "福岡市博多区", "福岡市南区", "福岡市早良区", 
              "福岡市東区", "福岡市西区", "福岡市城南区", "北九州市", "久留米市", "宗像・遠賀", 
              "粕屋", "筑紫", "糸島", "田川", "北筑後", "南筑後", "京築", "嘉穂・鞍手")
 )
   
-ref_data <- read_csv("Data/reference_data.csv")
+dat <- read_csv("Data/reference_data.csv") |> 
+  pivot_longer(reports:per_sentinel) |> 
+  mutate(region = "福岡県")
 
 base_url <- "http://www.fihes.pref.fukuoka.jp/~idsc_fukuoka/idwr/idwr1/"
 
 get_data <- function(i = 1){
-  code <- reg$code[i]
-  region <- reg$region[i]
+  reg_code <- region$code[i]
+  reg_name <- region$name[i]
   
-  my_url <- str_c(base_url, code, ".html")
+  my_url <- str_c(base_url, reg_code, ".html")
 
   htm <- read_html(my_url)
   tmp <- htm |> html_element("table") |> html_table(na.strings = "-")
@@ -36,20 +38,35 @@ get_data <- function(i = 1){
     mutate(name = case_when(name == "報告数" ~ "reports",
                             name == "定当"~ "per_sentinel",
                             TRUE ~ name),
-           region = region)
+           region = reg_name) |> 
+    select(year, week, name, value, region)
   return(dat)
 }
 
-get_data(1)
+tmp <- list()
+for(i in 1:19){
+  tmp[[i]] <- get_data(i)
+}
+tmp <- tmp |> bind_rows()
 
-get_data(1) |> select(-region) |> pivot_wider() |> 
-  bind_rows(ref_data) |> arrange(year, week) |> 
-  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) -> dat
+tmp
 
-dat |>   
-  ggplot() + aes(x = year_week, y = per_sentinel) + geom_col() + theme_bw() +
-  scale_x_discrete(labels = dat$week) +
+dat_updated <- dat |> 
+  left_join(tmp, by = join_by(year, week, name, region)) |> 
+  mutate(value = if_else(is.na(value.y), value.x, value.y)) |> 
+  select(year, week, name, value, region)
+  
+tmp_filterd <- tmp |>
+  anti_join(dat, by = join_by(year, week, name, region))
+
+dat <- dat_updated |> bind_rows(tmp_filterd)
+
+
+dat |> filter(name == "per_sentinel", region == "福岡県") |> 
+  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
+  ggplot() + aes(x = year_week, y = value) + geom_col() + theme_bw() +
   theme(axis.title = element_blank())
+
   
 
 
