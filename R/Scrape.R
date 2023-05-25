@@ -64,8 +64,11 @@ dat <- dat_updated |> bind_rows(tmp_filterd)
 
 dat |> filter(name == "per_sentinel", region == "福岡県") |> 
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
-  ggplot() + aes(x = year_week, y = value) + geom_col() + theme_bw() +
-  theme(axis.title = element_blank())
+  ggplot() + aes(x = year_week, y = value) + geom_col() + 
+  theme_bw() + labs(title = "福岡県新型コロナウイルス感染症定点当り報告数") +
+  theme(plot.title = element_text(family = "筑紫A丸ゴシック"),
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5))
 
   
 
