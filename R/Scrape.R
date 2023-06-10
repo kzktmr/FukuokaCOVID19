@@ -61,6 +61,9 @@ tmp_filterd <- tmp |>
 
 dat <- dat_updated |> bind_rows(tmp_filterd)
 
+today <-Sys.Date()
+
+dat |> write_excel_csv(paste("data/data_", today, ".csv", sep = ""))
 
 dat |> filter(name == "per_sentinel", region == "福岡県") |> 
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
@@ -69,6 +72,7 @@ dat |> filter(name == "per_sentinel", region == "福岡県") |>
   theme(plot.title = element_text(family = "筑紫A丸ゴシック"),
         axis.title = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5))
+
 
   
 
