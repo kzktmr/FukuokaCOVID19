@@ -87,5 +87,5 @@ dat |> filter(name == "per_sentinel", region == "福岡県") |>
         axis.title = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5))
 
-
-
+ggsave(paste("figure/growth_", today, ".png"), width = 1920, height = 1080, units = "px",
+       dpi = "retina")
