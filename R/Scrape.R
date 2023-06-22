@@ -12,10 +12,13 @@ region <- tibble(
              "福岡市東区", "福岡市西区", "福岡市城南区", "北九州市", "久留米市", "宗像・遠賀", 
              "粕屋", "筑紫", "糸島", "田川", "北筑後", "南筑後", "京築", "嘉穂・鞍手")
 )
-  
-dat <- read_csv("Data/reference_data.csv") |> 
-  pivot_longer(reports:per_sentinel) |> 
-  mutate(region = "福岡県")
+
+# dat <- read_csv("Data/reference_data.csv") |> 
+#   pivot_longer(reports:per_sentinel) |> 
+#   mutate(region = "福岡県")
+
+fn <- list.files("Data", "^data", full.names = TRUE) |> last()
+dat <- read_csv(fn)
 
 base_url <- "http://www.fihes.pref.fukuoka.jp/~idsc_fukuoka/idwr/idwr1/"
 
@@ -89,3 +92,4 @@ dat |> filter(name == "per_sentinel", region == "福岡県") |>
 
 ggsave(paste("figure/growth_", today, ".png"), width = 1920, height = 1080, units = "px",
        dpi = "retina")
+  
