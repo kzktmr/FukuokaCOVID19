@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     social: [ "menu" ]
     source_code: "https://github.com/kzktmr/FukuokaCovid19"
-    orientation: rows
+    orientation: columns
     vertical_layout: fill
 ---
 
@@ -22,14 +22,22 @@ library(plotly)
 fn <- list.files("Data", "^data_.+csv$", full.names = TRUE) |> dplyr::last()
 dat <- readr::read_csv(fn) 
 dat_fuk <- dat |> filter(name == "per_sentinel", region == "福岡県") |> 
-  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}"))
+  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}"),
+         growth = value / lag(value))
 ```
 
 Test
 =====================================  
 
+### 
 
 ```{r}
-plot_ly(dat_fuk, type="bar", x = ~year_week, y = ~value)
+plot_ly() |> add_bars(data = dat_fuk, x = ~year_week, y = ~value)
+```
+
+### 
+
+```{r}
+plot_ly() |> add_lines(data = dat_fuk, x = ~year_week, y = ~growth)
 ```
 
