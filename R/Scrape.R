@@ -30,7 +30,8 @@ get_data <- function(i = 1){
   htm <- read_html(my_url)
   tmp <- htm |> html_element("table") |> html_table(na.strings = "-")
   dat <- tmp |> slice(2:4) |> select(-1) |> t() |> 
-    as_tibble() |> rlang::set_names(c("year_week", "name", "value")) |> 
+    as_tibble(.name_repair = "unique") |> 
+    rlang::set_names(c("year_week", "name", "value")) |> 
     mutate(year = str_extract(year_week, "^[0-9]{4}年"),
            year = str_extract(year, "[0-9]+"),
            week = str_extract(year_week, "(第).+(週)"),
