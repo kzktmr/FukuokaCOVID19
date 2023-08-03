@@ -24,20 +24,50 @@ dat <- readr::read_csv(fn)
 dat_fuk <- dat |> filter(name == "per_sentinel", region == "福岡県") |> 
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}"),
          growth = value / lag(value))
+ambulance <- readr::read_csv("ambulance.csv") |> 
+  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
+  filter(year_week >= "2022_41")
+
+#
+hline <- function(y = 0, color = "black") {
+  list(
+    type = "line",
+    x0 = 0,
+    x1 = 1,
+    xref = "paper",
+    y0 = y,
+    y1 = y,
+    line = list(color = color)
+  )
+}
 ```
 
 Test
 =====================================  
 
-### 
+###
 
 ```{r}
-plot_ly() |> add_bars(data = dat_fuk, x = ~year_week, y = ~value)
+plot_ly() |> add_bars(data = dat_fuk, x = ~year_week, y = ~value) |> 
+  layout(title = '定点あたり報告数', 
+         xaxis = list(title = NA), yaxis = list(title = NA))
 ```
 
 ### 
 
 ```{r}
-plot_ly() |> add_lines(data = dat_fuk, x = ~year_week, y = ~growth)
+plot_ly() |> add_lines(data = dat_fuk, x = ~year_week, y = ~growth) |> 
+  layout(title = '定点あたり報告数前週比',
+         xaxis = list(title = NA), yaxis = list(title = NA),
+         shapes = list(hline(y = 1, color = "red")))
+```
+
+### 
+
+```{r}
+plot_ly() |> add_lines(data = ambulance, x = ~year_week, y = ~value, color = ~city) |> 
+  layout(legend = list(x = 0.05, y = 0.95),
+         xaxis = list(title = NA), yaxis = list(title = NA),
+         title = '救急搬送困難事案件数')
 ```
 
