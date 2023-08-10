@@ -3,6 +3,7 @@ library(tidyr)
 library(readr)
 library(stringr)
 library(rvest)
+library(readxl)
 
 region <- tibble(
   code = c("00", "08", "09", "10", "11", "12", "13", "14", "15", "42", 
@@ -67,3 +68,16 @@ dat <- dat_updated |> bind_rows(tmp_filterd)
 today <-Sys.Date()
 
 dat |> write_excel_csv(paste("data/data_", today, ".csv", sep = ""))
+
+#
+download.file("https://www.fdma.go.jp/disaster/coronavirus/items/coronavirus_data.xlsx", "ambulance.xlsx")
+tmp <- read_excel("ambulance.xlsx", skip = 5, col_names = FALSE) %>% 
+  rename(pref = "...1", city = "...2") %>% 
+  select(-pref) %>% filter(city %in% c("福岡市消防局", "北九州市消防局")) %>% 
+  pivot_longer(-city) %>% 
+  mutate(week = as.integer(str_extract(name, "[0-9]+")) - 2,
+         date = lubridate::ymd("2020-03-30") + lubridate::weeks(week - 1 ),
+         year = lubridate::year(date),
+         week = lubridate::week(date)) %>% 
+  select(year, week, city, value)
+write_csv(tmp, "ambulance.csv")
