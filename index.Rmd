@@ -26,12 +26,15 @@ dat_fuk <- dat |> filter(name == "per_sentinel", region == "福岡県") |>
          growth = value / lag(value))
 ambulance <- readr::read_csv("ambulance.csv") |> 
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
-  filter(year_week >= "2022_41")
+  filter(year_week >= "2022_41") |> 
+  mutate(city = factor(city, levels = c("福岡市消防局", "北九州市消防局")))
 nurse <- readr::read_csv("nurse.csv") |> 
   filter(type %in% c("休んでいる看護職員の総数",
                      "うち、本人の感染以外を理由に休んでいる看護職員数")) |> 
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
-  filter(year_week >= "2022_41")
+  filter(year_week >= "2022_41") |> 
+  mutate(type = factor(type, levels = c("休んでいる看護職員の総数",
+                     "うち、本人の感染以外を理由に休んでいる看護職員数")))
 #
 hline <- function(y = 0, color = "black") {
   list(
@@ -73,7 +76,8 @@ Row
 ### 
 
 ```{r}
-plot_ly() |> add_lines(data = ambulance, x = ~year_week, y = ~value, color = ~city) |> 
+plot_ly() |> 
+  add_lines(data = ambulance, x = ~year_week, y = ~value, color = ~city) |> 
   layout(legend = list(x = 0.05, y = 0.95),
          xaxis = list(title = NA), yaxis = list(title = NA),
          title = '救急搬送困難事案件数')
@@ -82,7 +86,8 @@ plot_ly() |> add_lines(data = ambulance, x = ~year_week, y = ~value, color = ~ci
 ### 
 
 ```{r}
-plot_ly() |> add_lines(data = nurse, x = ~year_week, y = ~value, color = ~type) |> 
+plot_ly() |> 
+  add_lines(data = nurse, x = ~year_week, y = ~value, color = ~type) |> 
   layout(legend = list(x = 0.05, y = 0.95),
          xaxis = list(title = NA), yaxis = list(title = NA),
          title = '重点医療機関における新型コロナウイルス感染症に関連して休んでいる看護職員数')
