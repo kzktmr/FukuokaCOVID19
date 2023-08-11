@@ -82,7 +82,8 @@ tmp <- read_excel("ambulance.xlsx", skip = 5, col_names = FALSE) %>%
   select(year, week, city, value)
 write_csv(tmp, "ambulance.csv")
 
-# 
+# 重点医療機関における新型コロナウイルス感染症に関連して休んでいる看護職員数
+# https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000121431_00130.html
 download.file("https://www.mhlw.go.jp/content/001114477.xlsx", "nurse.xlsx")
 tmp <- read_excel("nurse.xlsx", skip = 10, col_names = FALSE) |> 
   rename(no = "...1", pref = "...2", type = "...3") |> fill(no,pref) |>
