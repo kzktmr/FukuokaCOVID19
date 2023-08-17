@@ -25,13 +25,13 @@ dat_fuk <- dat |> filter(name == "per_sentinel", region == "福岡県") |>
   mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}"),
          growth = value / lag(value))
 ambulance <- readr::read_csv("ambulance.csv") |> 
-  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
+  mutate(year = year(date), week = week(date),
+         year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
   filter(year_week >= "2022_41") |> 
   mutate(city = factor(city, levels = c("福岡市消防局", "北九州市消防局")))
 nurse <- readr::read_csv("nurse.csv") |> 
-  filter(type %in% c("休んでいる看護職員の総数",
-                     "うち、本人の感染以外を理由に休んでいる看護職員数")) |> 
-  mutate(year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
+  mutate(year = year(date), week = week(date),
+         year_week = str_glue("{year}_{sprintf('%02d', week)}")) |> 
   filter(year_week >= "2022_41") |> 
   mutate(type = factor(type, levels = c("休んでいる看護職員の総数",
                      "うち、本人の感染以外を理由に休んでいる看護職員数")))

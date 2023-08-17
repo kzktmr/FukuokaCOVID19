@@ -24,7 +24,7 @@ window.FlexDashboardComponents = [];
 <script id="flexdashboard-navbar" type="application/json">
 [{"icon":"fa-share-alt","items":[{"title":"Twitter","icon":"fa-twitter"},{"title":"Facebook","icon":"fa-facebook"},{"title":"LinkedIn","icon":"fa-linkedin"},{"title":"Pinterest","icon":"fa-pinterest"}]},{"title":"Source Code","icon":"fa-github","href":"https://github.com/kzktmr/FukuokaCovid19","align":"right"}]
 </script>
-<script src="site_libs/header-attrs-2.23/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.24/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
@@ -43,9 +43,9 @@ window.FlexDashboardComponents = [];
 <script src="site_libs/stickytableheaders-0.1.19/jquery.stickytableheaders.min.js"></script>
 <link href="site_libs/font-awesome-6.4.0/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.4.0/css/v4-shims.min.css" rel="stylesheet" />
-<link href="site_libs/value-box-accent-static-0.6.1/theme-cosmo-value-box.css" rel="stylesheet" />
-<link href="site_libs/flexdashboard-css-0.6.1/flexdashboard.min.css" rel="stylesheet" />
-<link href="site_libs/flexdashboard-css-0.6.1/theme-cosmo.css" rel="stylesheet" />
+<link href="site_libs/value-box-accent-static-0.6.2/theme-cosmo-value-box.css" rel="stylesheet" />
+<link href="site_libs/flexdashboard-css-0.6.2/flexdashboard.min.css" rel="stylesheet" />
+<link href="site_libs/flexdashboard-css-0.6.2/theme-cosmo.css" rel="stylesheet" />
 <script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
 <script src="site_libs/plotly-binding-4.10.2/plotly.js"></script>
 <script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
@@ -445,6 +445,7 @@ var FlexDashboard = (function () {
     var id = page.attr('id');
     var icon = page.attr('data-icon');
     var navmenu = page.attr('data-navmenu');
+    var navmenuIcon = page.attr('data-navmenu-icon');
 
     // get hidden state (transfer this to navbar)
     var hidden = page.hasClass('hidden');
@@ -463,8 +464,6 @@ var FlexDashboard = (function () {
 
     // add the tab-pane class to the wrapper
     wrapper.addClass('tab-pane');
-    if (active)
-      wrapper.addClass('active');
 
     // get a reference to the h1, discover its inner contens, then detach it
     var h1 = wrapper.find('h1').first();
@@ -475,19 +474,24 @@ var FlexDashboard = (function () {
     var li = $('<li></li>');
     var a = navbarLink(icon, title, '#' + id);
     a.attr('data-toggle', 'tab');
+    a.attr('data-bs-toggle', 'tab');
     li.append(a);
 
     // add it to the navbar (or navbar menu if specified)
     var container = $('ul.navbar-left');
     if (navmenu) {
       var menuId = navmenu.replace(/\s+/g, '');
-      var menu = navbarMenu(menuId, null, navmenu, container);
+      var menu = navbarMenu(menuId, navmenuIcon, navmenu, container);
       li.find("> a").removeClass("nav-link").addClass("dropdown-item");
       menu.append(li);
     } else {
       li.addClass("nav-item")
       container.append(li);
     }
+
+    // mark active tab and corresponding nav menu item
+    if (active)
+      $(a).tab("show");
 
     // hide it if requested
     if (hidden)
@@ -553,7 +557,7 @@ var FlexDashboard = (function () {
 
      var serviceLinks = {
       "twitter": "https://twitter.com/share?text=" + encodeURIComponent(document.title) + "&url="+encodeURIComponent(location.href),
-      "facebook": "https://www.facebook.com/sharer/sharer.php?s=100&p[url]="+encodeURIComponent(location.href),
+      "facebook": "https://www.facebook.com/sharer/sharer.php?u="+encodeURIComponent(location.href),
       "linkedin": "https://www.linkedin.com/shareArticle?mini=true&url="+encodeURIComponent(location.href) + "&title=" + encodeURIComponent(document.title),
       "pinterest": "https://pinterest.com/pin/create/link/?url="+encodeURIComponent(location.href) + "&description=" + encodeURIComponent(document.title)
     };
@@ -1214,7 +1218,7 @@ var FlexDashboard = (function () {
       var headingDom = heading.contents();
 
       // build and append the tab list item
-      var a = $('<a role="tab" data-toggle="tab" class="nav-link"></a>');
+      var a = $('<a role="tab" data-toggle="tab" data-bs-toggle="tab" class="nav-link"></a>');
       a.append(headingDom);
       a.attr('href', '#' + id);
       a.attr('aria-controls', id);
@@ -1415,9 +1419,10 @@ var FlexDashboard = (function () {
 
     // restore tab/page from bookmark
     var hash = window.decodeURIComponent(window.location.hash);
-    if (hash.length > 0)
+    if (hash.length > 0) {
+      // Update the tab without .showPage() so that we don't change page history
       $('ul.nav a[href="' + hash + '"]').tab('show');
-    FlexDashboardUtils.manageActiveNavbarMenu();
+    }
 
     // navigate to a tab when the history changes
     window.addEventListener("popstate", function(e) {
@@ -1426,9 +1431,9 @@ var FlexDashboard = (function () {
       if (activeTab.length) {
         activeTab.tab('show');
       } else {
+        // returning to the base page URL without a hash activates first tab
         $('ul.nav a:first').tab('show');
       }
-      FlexDashboardUtils.manageActiveNavbarMenu();
     });
 
     // add a hash to the URL when the user clicks on a tab/page
@@ -1512,7 +1517,6 @@ window.FlexDashboardUtils = {
     setTimeout(function() {
         window.scrollTo(0, 0);
     }, 10);
-    this.manageActiveNavbarMenu();
   },
   showPage: function(href) {
     $('ul.navbar-nav li a[href="' + href + '"]').tab('show');
@@ -1540,17 +1544,6 @@ window.FlexDashboardUtils = {
       return url.substring(hashLoc);
     else
       return "";
-  },
-  manageActiveNavbarMenu: function () {
-    // remove active from currently active tabs
-    $('.navbar ul.nav .active').removeClass('active');
-    // find the active tab
-    var activeTab = $('.dashboard-page-wrapper.tab-pane.active');
-    if (activeTab.length > 0) {
-      var tabId = activeTab.attr('id');
-      if (tabId)
-        $(".navbar ul.nav a[href='#" + tabId + "']").tab("show");
-    }
   }
 };
 
@@ -1882,16 +1875,16 @@ window.FlexDashboardComponents.push({
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-f0f51a2d3bc3c5d794ee" style="width:576px;height:460.8px;"></div>
-<script type="application/json" data-for="htmlwidget-f0f51a2d3bc3c5d794ee">{"x":{"visdat":{"15ae331133459":["function () ","plotlyVisDat"],"15ae363d1d83a":["function () ","data"]},"cur_data":"15ae363d1d83a","attrs":{"15ae363d1d83a":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"bar","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"定点あたり報告数","xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[3.4399999999999999,2.8199999999999998,3.3500000000000001,3.1600000000000001,4.1799999999999997,5.5899999999999999,6.6100000000000003,9.0700000000000003,10.5,17.780000000000001,26.620000000000001,37.200000000000003,39.799999999999997,40.920000000000002,28.210000000000001,21.27,14.23,9.7799999999999994,5.9800000000000004,4.6399999999999997,2.79,2.0699999999999998,1.5800000000000001,1.1399999999999999,1.0800000000000001,0.92000000000000004,1.04,0.93999999999999995,1.3300000000000001,1.02,2.0099999999999998,2.3999999999999999,3.0899999999999999,3.0800000000000001,4.25,5.7599999999999998,5.9199999999999999,5.7599999999999998,7.21,10.85,12.93,18.690000000000001,21.640000000000001,21],"type":"bar","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-9d1b7add2eac26d98232" style="width:576px;height:460.8px;"></div>
+<script type="application/json" data-for="htmlwidget-9d1b7add2eac26d98232">{"x":{"visdat":{"b6556c6027ed":["function () ","plotlyVisDat"],"b6551cdd7031":["function () ","data"]},"cur_data":"b6551cdd7031","attrs":{"b6551cdd7031":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"bar","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"定点あたり報告数","xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"],"y":[3.4399999999999999,2.8199999999999998,3.3500000000000001,3.1600000000000001,4.1799999999999997,5.5899999999999999,6.6100000000000003,9.0700000000000003,10.5,17.780000000000001,26.620000000000001,37.200000000000003,39.799999999999997,40.920000000000002,28.210000000000001,21.27,14.23,9.7799999999999994,5.9800000000000004,4.6399999999999997,2.79,2.0699999999999998,1.5800000000000001,1.1399999999999999,1.0800000000000001,0.92000000000000004,1.04,0.93999999999999995,1.3300000000000001,1.02,2.0099999999999998,2.3999999999999999,3.0899999999999999,3.0800000000000001,4.25,5.7599999999999998,5.9199999999999999,5.7599999999999998,7.21,10.85,12.93,18.690000000000001,21.640000000000001,21,14.109999999999999],"type":"bar","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="section-1" class="section level3">
 <h3></h3>
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-3258a65853dda4fc2022" style="width:576px;height:460.8px;"></div>
-<script type="application/json" data-for="htmlwidget-3258a65853dda4fc2022">{"x":{"visdat":{"15ae37126fe6d":["function () ","plotlyVisDat"],"15ae33709e024":["function () ","data"]},"cur_data":"15ae33709e024","attrs":{"15ae33709e024":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"定点あたり報告数前週比","xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"shapes":[{"type":"line","x0":0,"x1":1,"xref":"paper","y0":1,"y1":1,"line":{"color":"red"}}],"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[0.81976744186046513,1.1879432624113475,0.94328358208955221,1.3227848101265822,1.3373205741626795,1.1824686940966012,1.3721633888048412,1.1576626240352812,1.6933333333333334,1.4971878515185602,1.3974455296769346,1.0698924731182795,1.028140703517588,0.68939393939393934,0.75398794753633458,0.66901739539257177,0.68728039353478565,0.61145194274028636,0.7759197324414715,0.60129310344827591,0.74193548387096764,0.76328502415458943,0.72151898734177211,0.94736842105263175,0.85185185185185186,1.1304347826086956,0.90384615384615374,1.4148936170212767,0.76691729323308266,1.9705882352941173,1.1940298507462688,1.2875000000000001,0.99676375404530748,1.3798701298701299,1.3552941176470588,1.0277777777777779,0.97297297297297292,1.2517361111111112,1.5048543689320388,1.191705069124424,1.4454756380510443,1.1578384162653825,0.97042513863216262],"type":"scatter","mode":"lines","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-d4326f27403b280691b0" style="width:576px;height:460.8px;"></div>
+<script type="application/json" data-for="htmlwidget-d4326f27403b280691b0">{"x":{"visdat":{"b65534a3b5a9":["function () ","plotlyVisDat"],"b65567eb853e":["function () ","data"]},"cur_data":"b65567eb853e","attrs":{"b65567eb853e":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"定点あたり報告数前週比","xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"shapes":[{"type":"line","x0":0,"x1":1,"xref":"paper","y0":1,"y1":1,"line":{"color":"red"}}],"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2022_53","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"],"y":[0.81976744186046513,1.1879432624113475,0.94328358208955221,1.3227848101265822,1.3373205741626795,1.1824686940966012,1.3721633888048412,1.1576626240352812,1.6933333333333334,1.4971878515185602,1.3974455296769346,1.0698924731182795,1.028140703517588,0.68939393939393934,0.75398794753633458,0.66901739539257177,0.68728039353478565,0.61145194274028636,0.7759197324414715,0.60129310344827591,0.74193548387096764,0.76328502415458943,0.72151898734177211,0.94736842105263175,0.85185185185185186,1.1304347826086956,0.90384615384615374,1.4148936170212767,0.76691729323308266,1.9705882352941173,1.1940298507462688,1.2875000000000001,0.99676375404530748,1.3798701298701299,1.3552941176470588,1.0277777777777779,0.97297297297297292,1.2517361111111112,1.5048543689320388,1.191705069124424,1.4454756380510443,1.1578384162653825,0.97042513863216262,0.67190476190476189],"type":"scatter","mode":"lines","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <div id="row-1" class="section level2">
@@ -1901,16 +1894,16 @@ window.FlexDashboardComponents.push({
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-d3c15d5ce79763170e1c" style="width:576px;height:460.8px;"></div>
-<script type="application/json" data-for="htmlwidget-d3c15d5ce79763170e1c">{"x":{"visdat":{"15ae3326983c3":["function () ","plotlyVisDat"],"15ae32d499110":["function () ","data"]},"cur_data":"15ae32d499110","attrs":{"15ae32d499110":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","color":{},"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"legend":{"x":0.050000000000000003,"y":0.94999999999999996},"xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"title":"救急搬送困難事案件数","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[35,37,19,46,46,71,48,67,93,143,184,242,278,271,159,115,61,104,103,46,42,44,40,39,40,24,31,38,28,40,42,17,40,26,29,40,36,31,43,76,113,139,132],"type":"scatter","mode":"lines","name":"福岡市消防局","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[7,12,4,18,6,11,15,17,20,58,103,75,159,160,63,62,30,27,40,25,12,16,27,16,11,4,8,15,5,12,3,3,3,5,7,5,5,7,9,13,23,35,39],"type":"scatter","mode":"lines","name":"北九州市消防局","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-2aa28faabd41a3605fb4" style="width:576px;height:460.8px;"></div>
+<script type="application/json" data-for="htmlwidget-2aa28faabd41a3605fb4">{"x":{"visdat":{"b65567d9a3":["function () ","plotlyVisDat"],"b65522015c8a":["function () ","data"]},"cur_data":"b65522015c8a","attrs":{"b65522015c8a":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","color":{},"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"legend":{"x":0.050000000000000003,"y":0.94999999999999996},"xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"title":"救急搬送困難事案件数","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"],"y":[35,37,19,46,46,71,48,67,93,143,184,242,278,271,159,115,61,104,103,46,42,44,40,39,40,24,31,38,28,40,42,17,40,26,29,40,36,31,43,76,113,139,132,133],"type":"scatter","mode":"lines","name":"福岡市消防局","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31","2023_32"],"y":[7,12,4,18,6,11,15,17,20,58,103,75,159,160,63,62,30,27,40,25,12,16,27,16,11,4,8,15,5,12,3,3,3,5,7,5,5,7,9,13,23,35,39,51],"type":"scatter","mode":"lines","name":"北九州市消防局","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="section-3" class="section level3">
 <h3></h3>
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-ec2e917c6692994bbfe9" style="width:576px;height:460.8px;"></div>
-<script type="application/json" data-for="htmlwidget-ec2e917c6692994bbfe9">{"x":{"visdat":{"15ae316742e0b":["function () ","plotlyVisDat"],"15ae3257adfb1":["function () ","data"]},"cur_data":"15ae3257adfb1","attrs":{"15ae3257adfb1":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","color":{},"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"legend":{"x":0.050000000000000003,"y":0.94999999999999996},"xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"title":"重点医療機関における新型コロナウイルス感染症に関連して休んでいる看護職員数","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[77,65,68,70,91,147,135,152,178,290,383,328,368,441,296,199,153,121,96,71,60,60,37,42,34,41,39,36,25,28,31,43,49,46,50,62,65,64,67,107,161,211,206],"type":"scatter","mode":"lines","name":"休んでいる看護職員の総数","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[9,14,9,16,12,28,37,43,43,80,85,82,65,76,59,41,31,26,25,13,14,13,7,9,6,7,8,8,2,4,2,0,5,4,6,15,11,10,7,6,14,18,18],"type":"scatter","mode":"lines","name":"うち、本人の感染以外を理由に休んでいる看護職員数","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-814d9eecd03fa5d6cb4c" style="width:576px;height:460.8px;"></div>
+<script type="application/json" data-for="htmlwidget-814d9eecd03fa5d6cb4c">{"x":{"visdat":{"b6555214776a":["function () ","plotlyVisDat"],"b6553dabfa3f":["function () ","data"]},"cur_data":"b6553dabfa3f","attrs":{"b6553dabfa3f":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"x":{},"y":{},"type":"scatter","mode":"lines","color":{},"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"legend":{"x":0.050000000000000003,"y":0.94999999999999996},"xaxis":{"domain":[0,1],"automargin":true,"title":null,"type":"category","categoryorder":"array","categoryarray":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"]},"yaxis":{"domain":[0,1],"automargin":true,"title":null},"title":"重点医療機関における新型コロナウイルス感染症に関連して休んでいる看護職員数","hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[77,65,68,70,91,147,135,152,178,290,383,328,368,441,296,199,153,121,96,71,60,60,37,42,34,41,39,36,25,28,31,43,49,46,50,62,65,64,67,107,161,211,205],"type":"scatter","mode":"lines","name":"休んでいる看護職員の総数","marker":{"color":"rgba(102,194,165,1)","line":{"color":"rgba(102,194,165,1)"}},"textfont":{"color":"rgba(102,194,165,1)"},"error_y":{"color":"rgba(102,194,165,1)"},"error_x":{"color":"rgba(102,194,165,1)"},"line":{"color":"rgba(102,194,165,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":["2022_41","2022_42","2022_43","2022_44","2022_45","2022_46","2022_47","2022_48","2022_49","2022_50","2022_51","2022_52","2023_01","2023_02","2023_03","2023_04","2023_05","2023_06","2023_07","2023_08","2023_09","2023_10","2023_11","2023_12","2023_13","2023_14","2023_15","2023_16","2023_17","2023_18","2023_19","2023_20","2023_21","2023_22","2023_23","2023_24","2023_25","2023_26","2023_27","2023_28","2023_29","2023_30","2023_31"],"y":[9,14,9,16,12,28,37,43,43,80,85,82,65,76,59,41,31,26,25,13,14,13,7,9,6,7,8,8,2,4,2,0,5,4,6,15,11,10,7,6,14,18,20],"type":"scatter","mode":"lines","name":"うち、本人の感染以外を理由に休んでいる看護職員数","marker":{"color":"rgba(141,160,203,1)","line":{"color":"rgba(141,160,203,1)"}},"textfont":{"color":"rgba(141,160,203,1)"},"error_y":{"color":"rgba(141,160,203,1)"},"error_x":{"color":"rgba(141,160,203,1)"},"line":{"color":"rgba(141,160,203,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 
