@@ -1,0 +1,1 @@
+rmarkdown::render("web/index.Rmd", output_dir = "docs")
