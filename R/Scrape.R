@@ -66,4 +66,4 @@ dat <- dat_updated |> bind_rows(tmp_filterd)
 
 today <-Sys.Date()
 
-dat |> write_excel_csv(paste("data/data_", today, ".csv", sep = ""))
+dat |> write_excel_csv(paste("Data/data_", today, ".csv", sep = ""))
