@@ -19,14 +19,14 @@ write_csv(tmp, "Data/ambulance.csv")
 tmp_file <- tempfile()
 download.file("https://www.mhlw.go.jp/content/001134882.xlsx", tmp_file)
 
-tmp <- read_excel(tmp_file, skip = 10, col_names = FALSE) |> 
-  rename(no = "...1", pref = "...2", type = "...3") |> 
+tmp <-
+  read_excel(tmp_file, skip = 9) |> 
+  rename(no = "No.", pref = "都道府県", type = "...3") |> 
   select(-no) |> fill(pref) |> 
   filter(pref == "福岡県", stringr::str_detect(type, "数$")) |> 
   select(-pref) |> 
-  pivot_longer(-type, names_to = "week") |> 
-  mutate(week = as.integer(str_extract(week, "[0-9]+")) - 3,
-         date = lubridate::ymd("2022-04-06") + lubridate::weeks(week - 1 )) |>  
+  pivot_longer(-type, names_to = "day") |> 
+  mutate(date = as.Date(as.numeric(day), origin = "1899-12-30")) |> 
   select(date, type, value)
 
 write_csv(tmp, "Data/nurse.csv")
