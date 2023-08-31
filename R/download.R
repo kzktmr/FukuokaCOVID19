@@ -17,7 +17,7 @@ write_csv(tmp, "Data/ambulance.csv")
 # 全国医療機関の医療提供体制の状況
 # https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000121431_00130.html#h2_free4
 tmp_file <- tempfile()
-download.file("https://www.mhlw.go.jp/content/001134882.xlsx", tmp_file)
+download.file("https://www.mhlw.go.jp/content/001140505.xlsx", tmp_file)
 
 tmp <-
   read_excel(tmp_file, skip = 9) |> 
